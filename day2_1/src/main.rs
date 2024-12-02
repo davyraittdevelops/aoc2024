@@ -1,74 +1,90 @@
 use std::fs;
 
 fn main() {
-    println!("Hello, world!");
-
     let contents = fs::read_to_string("./src/input.txt").unwrap();
-    let (mut converted_array) = split_contents_in_array(contents);
-
-    // The levels are either all increasing or all decreasing.
-    // Any two adjacent levels differ by at least one and at most three.
-    // In the example above, the reports can be found safe or unsafe by checking those rules:
-    // 7 6 4 2 1: Safe because the levels are all decreasing by 1 or 2.
-    // 1 2 7 8 9: Unsafe because 2 7 is an increase of 5.
-    // 9 7 6 2 1: Unsafe because 6 2 is a decrease of 4.
-    // 1 3 2 4 5: Unsafe because 1 3 is increasing but 3 2 is decreasing.
-    // 8 6 4 4 1: Unsafe because 4 4 is neither an increase or a decrease.
-    // 1 3 6 7 9: Safe because the levels are all increasing by 1, 2, or 3.
+    let mut converted_array = split_contents_in_array(contents);
 
     let mut safe_counter = 0i32;
+    let mut unsafe_arrays: Vec<&Vec<i32>> = Vec::new();
 
     for sub_array in &converted_array {
         println!("{:#?}", sub_array);
 
-        let mut is_first = true;
-        let mut increasing: bool = false;
-        let mut is_safe = true;
-
-        for window in sub_array.windows(2) {
-            let diff = window[1] - window[0];
-
-            // Set the baseline of increasing or decreasing
-            if is_first {
-                is_first = false;
-                if diff > 0 {
-                    increasing = true;
-                } else {
-                    increasing = false;
-                }
-                println!(
-                    "This sub array is {}",
-                    if increasing {
-                        "increasing"
-                    } else {
-                        "decreasing"
-                    }
-                );
-            }
-
-            // Check if pattern maintains and diff is within bounds
-            if increasing {
-                // If increasing, diff should be positive and <= 3
-                if diff <= 0 || diff > 3 {
-                    is_safe = false;
-                    break; // No need to check further
-                }
-            } else {
-                // If decreasing, diff should be negative and >= -3
-                if diff >= 0 || diff < -3 {
-                    is_safe = false;
-                    break; // No need to check further
-                }
-            }
-        }
-
-        // After the loop, check if sequence was safe
-        if is_safe {
+        if is_safe(sub_array) {
             safe_counter += 1;
+        } else {
+            unsafe_arrays.push(sub_array);
         }
     }
 
-    println!("Final answer is: {:?}", safe_counter);
+    println!("Final answer part 1 is: {:?}", safe_counter);
+    println!(
+        "Found {:?} unsafe arrays to check for part 2",
+        unsafe_arrays.len()
+    );
+
+    let mut part2_counter = safe_counter; // Start with part 1 safe count
+
+    for unsafe_array in unsafe_arrays {
+        println!("Processing unsafe array: {:?}", unsafe_array);
+        let mut found_safe = false;
+
+        // Try removing each index once
+        for i in 0..unsafe_array.len() {
+            // Create a copy without the current index
+            let mut test_array: Vec<i32> = unsafe_array.clone();
+            test_array.remove(i);
+
+            // Check if this variation is safe
+            if is_safe(&test_array) {
+                found_safe = true;
+                break; // We found a safe variation, no need to check more
+            }
+        }
+
+        if found_safe {
+            part2_counter += 1;
+        }
+    }
+
+    println!("Final answer part 2 is: {:?}", part2_counter);
+}
+
+fn is_safe(array: &Vec<i32>) -> bool {
+    let mut is_first = true;
+    let mut increasing: bool = false;
+    let mut is_safe = true;
+
+    for window in array.windows(2) {
+        let diff = window[1] - window[0];
+
+        // Set the baseline of increasing or decreasing
+        if is_first {
+            is_first = false;
+            if diff > 0 {
+                increasing = true;
+            } else {
+                increasing = false;
+            }
+        }
+
+        // Check if pattern maintains and diff is within bounds
+        if increasing {
+            // If increasing, diff should be positive and <= 3
+            if diff <= 0 || diff > 3 {
+                is_safe = false;
+                break; // No need to check further
+            }
+        } else {
+            // If decreasing, diff should be negative and >= -3
+            if diff >= 0 || diff < -3 {
+                is_safe = false;
+                break; // No need to check further
+            }
+        }
+    }
+
+    is_safe
 }
 
 fn split_contents_in_array(contents: String) -> Vec<Vec<i32>> {
