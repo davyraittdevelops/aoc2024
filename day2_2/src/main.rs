@@ -78,6 +78,8 @@ fn split_contents_in_array(contents: String) -> Vec<Vec<i32>> {
         let mut row: Vec<i32> = Vec::new();
 
         for string_part in line.split_whitespace() {
+            // Convert string to i32, using unwrap() for simplicity
+            // In production code, you'd want proper error handling
             row.push(string_part.parse().unwrap());
         }
 
